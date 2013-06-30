@@ -1,6 +1,7 @@
 var key_count = 0;
 var key_timer;
 var key_timer_iter;
+var key_updated = new Object();
 var key_missing = new Object();
 
 function encrypt() {
@@ -87,7 +88,7 @@ function _decrypt(message,who,passphrase) {
 	error('sess '+msg.toString());
 	//error('priv '+JSON.stringify(priv_key));
 	for (var i=0; i<msg[0].sessionKeys.length;i++) {
-		error(JSON.stringify(priv_key[0]),1);
+		error('check priv key '+JSON.stringify({"priv_key":priv_key[0].obj.privateKeyPacket.publicKey.getKeyId(),"session_key":msg[0].sessionKeys[i].keyId.bytes}),1);
 		if (priv_key[0].obj.privateKeyPacket.publicKey.getKeyId() == msg[0].sessionKeys[i].keyId.bytes) {
 			keymat = { key: priv_key[0], keymaterial: priv_key[0].obj.privateKeyPacket};
 			sesskey = msg[0].sessionKeys[i];
@@ -131,7 +132,7 @@ function get_pubkey(search,callback) {
 		var temp = openpgp.keyring.getPublicKeyForAddress(user);
 		}catch(e){error(e.message)}
 		error('found '+temp.length+' keys for '+user);
-		if (temp.length == 0 && !key_missing.hasOwnProperty(user)) {
+		if ((temp.length == 0 || !key_updated.hasOwnProperty(user)) && !key_missing.hasOwnProperty(user)) {
 			
 			get_facebook_pubkey(terms[i]);
 			continue;
@@ -171,6 +172,7 @@ function get_facebook_pubkey(search_username) {
 			key_text = key_text.replace(/^\s*/mg,'');
 			key_text = key_text.replace(/\s*$/mg,'');
 			import_pubkey(key_text);
+			key_updated[username.substr(1)] = 1;
 			error('import_pubkey done');
 			//error('loading from '+start+' to '+end);
 			//error('key_text '+key_text,2);
